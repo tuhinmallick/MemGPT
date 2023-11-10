@@ -79,7 +79,7 @@ def user_message(msg, raw=False, dump=False, debug=DEBUG):
             try:
                 msg_json = json.loads(msg)
             except:
-                printd(f"Warning: failed to parse user message into json")
+                printd("Warning: failed to parse user message into json")
                 printd_user_message("🧑", msg)
                 return
     if msg_json["type"] == "user_message":
@@ -155,9 +155,8 @@ def function_message(msg, debug=DEBUG):
                     except Exception as e:
                         printd(str(e))
                         printd(msg_dict)
-                        pass
             else:
-                printd(f"Warning: did not recognize function message")
+                printd("Warning: did not recognize function message")
                 printd_function_message("", msg)
     else:
         try:
@@ -180,9 +179,7 @@ def print_messages(message_sequence, dump=False):
         role = msg["role"]
         content = msg["content"]
 
-        if role == "system":
-            system_message(content)
-        elif role == "assistant":
+        if role == "assistant":
             # Differentiate between internal monologue, function calls, and messages
             if msg.get("function_call"):
                 if content is not None:
@@ -194,10 +191,12 @@ def print_messages(message_sequence, dump=False):
                 # assistant_message(content)
             else:
                 internal_monologue(content)
-        elif role == "user":
-            user_message(content, dump=dump)
         elif role == "function":
             function_message(content, debug=dump)
+        elif role == "system":
+            system_message(content)
+        elif role == "user":
+            user_message(content, dump=dump)
         else:
             print(f"Unknown role: {content}")
 

@@ -34,17 +34,16 @@ def get_koboldcpp_completion(prompt, context_window, grammar=None, settings=SIMP
         # curl: (52) Empty reply from server
         URI = urljoin(HOST.strip("/") + "/", KOBOLDCPP_API_SUFFIX.strip("/"))
         response = requests.post(URI, json=request)
-        if response.status_code == 200:
-            result = response.json()
-            result = result["results"][0]["text"]
-            if DEBUG:
-                print(f"json API response.text: {result}")
-        else:
+        if response.status_code != 200:
             raise Exception(
                 f"API call got non-200 response code (code={response.status_code}, msg={response.text}) for address: {URI}."
                 + f" Make sure that the koboldcpp server is running and reachable at {URI}."
             )
 
+        result = response.json()
+        result = result["results"][0]["text"]
+        if DEBUG:
+            print(f"json API response.text: {result}")
     except:
         # TODO handle gracefully
         raise

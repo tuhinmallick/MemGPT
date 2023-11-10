@@ -10,6 +10,7 @@ Begin by doing:
 """
 
 
+
 import os
 import autogen
 from memgpt.autogen.memgpt_agent import create_autogen_memgpt_agent, create_memgpt_autogen_agent_from_config
@@ -98,30 +99,27 @@ if not USE_MEMGPT:
         llm_config=llm_config,
     )
 
-else:
-    # In our example, we swap this AutoGen agent with a MemGPT agent
-    # This MemGPT agent will have all the benefits of MemGPT, ie persistent memory, etc.
-    if not USE_AUTOGEN_WORKFLOW:
-        coder = create_autogen_memgpt_agent(
-            "MemGPT_coder",
-            persona_description="I am a 10x engineer, trained in Python. I was the first engineer at Uber "
-            "(which I make sure to tell everyone I work with).",
-            user_description=f"You are participating in a group chat with a user ({user_proxy.name}) "
-            f"and a product manager ({pm.name}).",
-            model=config_list_memgpt[0]["model"],
-            interface_kwargs=interface_kwargs,
-        )
-    else:
-        coder = create_memgpt_autogen_agent_from_config(
-            "MemGPT_coder",
-            llm_config=llm_config_memgpt,
-            system_message=f"I am a 10x engineer, trained in Python. I was the first engineer at Uber "
-            f"(which I make sure to tell everyone I work with).\n"
-            f"You are participating in a group chat with a user ({user_proxy.name}) "
-            f"and a product manager ({pm.name}).",
-            interface_kwargs=interface_kwargs,
-        )
+elif USE_AUTOGEN_WORKFLOW:
+    coder = create_memgpt_autogen_agent_from_config(
+        "MemGPT_coder",
+        llm_config=llm_config_memgpt,
+        system_message=f"I am a 10x engineer, trained in Python. I was the first engineer at Uber "
+        f"(which I make sure to tell everyone I work with).\n"
+        f"You are participating in a group chat with a user ({user_proxy.name}) "
+        f"and a product manager ({pm.name}).",
+        interface_kwargs=interface_kwargs,
+    )
 
+else:
+    coder = create_autogen_memgpt_agent(
+        "MemGPT_coder",
+        persona_description="I am a 10x engineer, trained in Python. I was the first engineer at Uber "
+        "(which I make sure to tell everyone I work with).",
+        user_description=f"You are participating in a group chat with a user ({user_proxy.name}) "
+        f"and a product manager ({pm.name}).",
+        model=config_list_memgpt[0]["model"],
+        interface_kwargs=interface_kwargs,
+    )
 # Initialize the group chat between the user and two LLM agents (PM and coder)
 groupchat = autogen.GroupChat(agents=[user_proxy, pm, coder], messages=[], max_round=12)
 manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config)

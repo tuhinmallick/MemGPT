@@ -45,7 +45,7 @@ class ZephyrMistralWrapper(LLMChatCompletionWrapper):
 
         # System instructions go first
         assert messages[0]["role"] == "system"
-        prompt += f"<|system|>"
+        prompt += "<|system|>"
         prompt += f"\n{messages[0]['content']}"
 
         # Next is the functions preamble
@@ -163,7 +163,7 @@ class ZephyrMistralWrapper(LLMChatCompletionWrapper):
         if self.clean_func_args:
             function_name, function_parameters = self.clean_function_args(function_name, function_parameters)
 
-        message = {
+        return {
             "role": "assistant",
             "content": None,
             "function_call": {
@@ -171,7 +171,6 @@ class ZephyrMistralWrapper(LLMChatCompletionWrapper):
                 "arguments": json.dumps(function_parameters),
             },
         }
-        return message
 
 
 class ZephyrMistralInnerMonologueWrapper(ZephyrMistralWrapper):
@@ -330,7 +329,7 @@ class ZephyrMistralInnerMonologueWrapper(ZephyrMistralWrapper):
                 function_parameters,
             ) = self.clean_function_args(function_name, function_parameters)
 
-        message = {
+        return {
             "role": "assistant",
             "content": inner_thoughts,
             "function_call": {
@@ -338,4 +337,3 @@ class ZephyrMistralInnerMonologueWrapper(ZephyrMistralWrapper):
                 "arguments": json.dumps(function_parameters),
             },
         }
-        return message

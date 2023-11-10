@@ -104,13 +104,7 @@ def load(memgpt_agent, filename):
         # Load the latest file
         save_path = os.path.join(constants.MEMGPT_DIR, "saved_state")
         print(f"/load warning: no checkpoint specified, loading most recent checkpoint from {save_path} instead")
-        json_files = glob.glob(os.path.join(save_path, "*.json"))  # This will list all .json files in the current directory.
-
-        # Check if there are any json files.
-        if not json_files:
-            print(f"/load error: no .json checkpoint files found")
-            return
-        else:
+        if json_files := glob.glob(os.path.join(save_path, "*.json")):
             # Sort files based on modified timestamp, with the latest file being the first.
             filename = max(json_files, key=os.path.getmtime)
             try:
@@ -119,6 +113,9 @@ def load(memgpt_agent, filename):
             except Exception as e:
                 print(f"Loading {filename} failed with: {e}")
 
+        else:
+            print("/load error: no .json checkpoint files found")
+            return
     # need to load persistence manager too
     filename = filename.replace(".json", ".persistence.pickle")
     try:
@@ -353,18 +350,18 @@ def main(
         if not os.path.exists(cfg.archival_storage_files):
             print(f"File {cfg.archival_storage_files} does not exist")
             return
-        # Ingest data from file into archival storage
         else:
-            print(f"Database found! Loading database into archival memory")
+            print("Database found! Loading database into archival memory")
             data_list = utils.read_database_as_list(cfg.archival_storage_files)
             user_message = f"Your archival memory has been loaded with a SQL database called {data_list[0]}, which contains schema {data_list[1]}. Remember to refer to this first while answering any user questions!"
             for row in data_list:
                 memgpt_agent.persistence_manager.archival_memory.insert(row)
-            print(f"Database loaded into archival memory.")
+            print("Database loaded into archival memory.")
 
     if cfg.agent_save_file:
-        load_save_file = questionary.confirm(f"Load in saved agent '{cfg.agent_save_file}'?").ask()
-        if load_save_file:
+        if load_save_file := questionary.confirm(
+            f"Load in saved agent '{cfg.agent_save_file}'?"
+        ).ask():
             load(memgpt_agent, cfg.agent_save_file)
 
     # run agent loop
@@ -401,7 +398,7 @@ def run_agent_loop(memgpt_agent, first, no_verify=False, cfg=None, strip_ui=Fals
             user_input = user_input.rstrip()
 
             if user_input.startswith("!"):
-                print(f"Commands for CLI begin with '/' not '!'")
+                print("Commands for CLI begin with '/' not '!'")
                 continue
 
             if user_input == "":
@@ -446,7 +443,7 @@ def run_agent_loop(memgpt_agent, first, no_verify=False, cfg=None, strip_ui=Fals
                     if user_input.lower() == "/exit":
                         memgpt_agent.save()
                         break
-                    elif user_input.lower() == "/save" or user_input.lower() == "/savechat":
+                    elif user_input.lower() in ["/save", "/savechat"]:
                         memgpt_agent.save()
                         continue
 
@@ -512,7 +509,7 @@ def run_agent_loop(memgpt_agent, first, no_verify=False, cfg=None, strip_ui=Fals
 
                 elif user_input.lower() == "/retry":
                     # TODO this needs to also modify the persistence manager
-                    print(f"Retrying for another answer")
+                    print("Retrying for another answer")
                     while len(memgpt_agent.messages) > 0:
                         if memgpt_agent.messages[-1].get("role") == "user":
                             # we want to pop up to the last user message and send it again
@@ -547,7 +544,6 @@ def run_agent_loop(memgpt_agent, first, no_verify=False, cfg=None, strip_ui=Fals
                             break
                     continue
 
-                # No skip options
                 elif user_input.lower() == "/wipe":
                     memgpt_agent = agent.Agent(memgpt.interface)
                     user_message = None
@@ -562,7 +558,7 @@ def run_agent_loop(memgpt_agent, first, no_verify=False, cfg=None, strip_ui=Fals
                     multiline_input = not multiline_input
                     continue
 
-                elif user_input.lower() == "/" or user_input.lower() == "/help":
+                elif user_input.lower() in ["/", "/help"]:
                     questionary.print("CLI commands", "bold")
                     for cmd, desc in USER_COMMANDS:
                         questionary.print(cmd, "bold")

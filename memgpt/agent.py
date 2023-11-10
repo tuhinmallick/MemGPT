@@ -39,7 +39,7 @@ def initialize_memory(ai_notes, human_notes):
 
 
 def construct_system_with_memory(system, memory, memory_edit_timestamp, archival_memory=None, recall_memory=None):
-    full_system_message = "\n".join(
+    return "\n".join(
         [
             system,
             "\n",
@@ -55,7 +55,6 @@ def construct_system_with_memory(system, memory, memory_edit_timestamp, archival
             "</human>",
         ]
     )
-    return full_system_message
 
 
 def initialize_message_sequence(
@@ -75,28 +74,26 @@ def initialize_message_sequence(
     )
     first_user_message = get_login_event()  # event letting MemGPT know the user just logged in
 
-    if include_initial_boot_message:
-        if "gpt-3.5" in model:
-            initial_boot_messages = get_initial_boot_messages("startup_with_send_message_gpt35")
-        else:
-            initial_boot_messages = get_initial_boot_messages("startup_with_send_message")
-        messages = (
-            [
-                {"role": "system", "content": full_system_message},
-            ]
-            + initial_boot_messages
-            + [
-                {"role": "user", "content": first_user_message},
-            ]
-        )
-
-    else:
-        messages = [
+    if not include_initial_boot_message:
+        return [
             {"role": "system", "content": full_system_message},
             {"role": "user", "content": first_user_message},
         ]
 
-    return messages
+    initial_boot_messages = (
+        get_initial_boot_messages("startup_with_send_message_gpt35")
+        if "gpt-3.5" in model
+        else get_initial_boot_messages("startup_with_send_message")
+    )
+    return (
+        [
+            {"role": "system", "content": full_system_message},
+        ]
+        + initial_boot_messages
+        + [
+            {"role": "user", "content": first_user_message},
+        ]
+    )
 
 
 def get_ai_reply(
@@ -330,7 +327,7 @@ class Agent(object):
         directory = agent_config.save_state_dir()
         json_files = glob.glob(os.path.join(directory, "*.json"))  # This will list all .json files in the current directory.
         if not json_files:
-            print(f"/load error: no .json checkpoint files found")
+            print("/load error: no .json checkpoint files found")
             raise ValueError(f"Cannot load {agent_name}")
 
         # Sort files based on modified timestamp, with the latest file being the first.
@@ -573,11 +570,13 @@ class Agent(object):
                 input_message_sequence = self.messages
 
             if len(input_message_sequence) > 1 and input_message_sequence[-1]["role"] != "user":
-                printd(f"WARNING: attempting to run ChatCompletion without user as the last message in the queue")
+                printd(
+                    "WARNING: attempting to run ChatCompletion without user as the last message in the queue"
+                )
 
             # Step 1: send the conversation and available functions to GPT
             if not skip_verify and (first_message or self.messages_total == self.messages_total_init):
-                printd(f"This is the first message. Running extra verifier on AI response.")
+                printd("This is the first message. Running extra verifier on AI response.")
                 counter = 0
                 while True:
                     response = get_ai_reply(
@@ -756,23 +755,19 @@ class Agent(object):
         results, total = self.persistence_manager.recall_memory.text_search(query, count=count, start=page * count)
         num_pages = math.ceil(total / count) - 1  # 0 index
         if len(results) == 0:
-            results_str = f"No results found."
-        else:
-            results_pref = f"Showing {len(results)} of {total} results (page {page}/{num_pages}):"
-            results_formatted = [f"timestamp: {d['timestamp']}, {d['message']['role']} - {d['message']['content']}" for d in results]
-            results_str = f"{results_pref} {json.dumps(results_formatted)}"
-        return results_str
+            return "No results found."
+        results_pref = f"Showing {len(results)} of {total} results (page {page}/{num_pages}):"
+        results_formatted = [f"timestamp: {d['timestamp']}, {d['message']['role']} - {d['message']['content']}" for d in results]
+        return f"{results_pref} {json.dumps(results_formatted)}"
 
     def recall_memory_search_date(self, start_date, end_date, count=5, page=0):
         results, total = self.persistence_manager.recall_memory.date_search(start_date, end_date, count=count, start=page * count)
         num_pages = math.ceil(total / count) - 1  # 0 index
         if len(results) == 0:
-            results_str = f"No results found."
-        else:
-            results_pref = f"Showing {len(results)} of {total} results (page {page}/{num_pages}):"
-            results_formatted = [f"timestamp: {d['timestamp']}, {d['message']['role']} - {d['message']['content']}" for d in results]
-            results_str = f"{results_pref} {json.dumps(results_formatted)}"
-        return results_str
+            return "No results found."
+        results_pref = f"Showing {len(results)} of {total} results (page {page}/{num_pages}):"
+        results_formatted = [f"timestamp: {d['timestamp']}, {d['message']['role']} - {d['message']['content']}" for d in results]
+        return f"{results_pref} {json.dumps(results_formatted)}"
 
     def archival_memory_insert(self, content):
         self.persistence_manager.archival_memory.insert(content)
@@ -782,12 +777,10 @@ class Agent(object):
         results, total = self.persistence_manager.archival_memory.search(query, count=count, start=page * count)
         num_pages = math.ceil(total / count) - 1  # 0 index
         if len(results) == 0:
-            results_str = f"No results found."
-        else:
-            results_pref = f"Showing {len(results)} of {total} results (page {page}/{num_pages}):"
-            results_formatted = [f"timestamp: {d['timestamp']}, memory: {d['content']}" for d in results]
-            results_str = f"{results_pref} {json.dumps(results_formatted)}"
-        return results_str
+            return "No results found."
+        results_pref = f"Showing {len(results)} of {total} results (page {page}/{num_pages}):"
+        results_formatted = [f"timestamp: {d['timestamp']}, memory: {d['content']}" for d in results]
+        return f"{results_pref} {json.dumps(results_formatted)}"
 
     def message_chatgpt(self, message):
         """Base call to GPT API w/ functions"""
@@ -803,8 +796,7 @@ class Agent(object):
             # function_call=function_call,
         )
 
-        reply = response.choices[0].message.content
-        return reply
+        return response.choices[0].message.content
 
     def read_from_text_file(self, filename, line_start, num_lines=1, max_chars=500, trunc_message=True):
         if not os.path.exists(filename):
@@ -862,10 +854,7 @@ class Agent(object):
                 response = requests.get(url, headers=headers)
             else:
                 # Validate and convert the payload for other types of requests
-                if payload_json:
-                    payload = json.loads(payload_json)
-                else:
-                    payload = {}
+                payload = json.loads(payload_json) if payload_json else {}
                 print(f"[HTTP] launching {method} request to {url}, payload=\n{json.dumps(payload, indent=2)}")
                 response = requests.request(method, url, json=payload, headers=headers)
 

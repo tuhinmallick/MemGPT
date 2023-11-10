@@ -34,9 +34,13 @@ def get_chat_completion(
     grammar_name = None
 
     if HOST is None:
-        raise ValueError(f"The OPENAI_API_BASE environment variable is not defined. Please set it in your environment.")
+        raise ValueError(
+            "The OPENAI_API_BASE environment variable is not defined. Please set it in your environment."
+        )
     if HOST_TYPE is None:
-        raise ValueError(f"The BACKEND_TYPE environment variable is not defined. Please set it in your environment.")
+        raise ValueError(
+            "The BACKEND_TYPE environment variable is not defined. Please set it in your environment."
+        )
 
     if function_call != "auto":
         raise ValueError(f"function_call == {function_call} not supported (auto only)")
@@ -56,9 +60,9 @@ def get_chat_completion(
         llm_wrapper = dolphin.Dolphin21MistralWrapper(include_opening_brace_in_prefix=False)
         # grammar_name = "json"
         grammar_name = "json_func_calls_with_inner_thoughts"
-    elif model == "zephyr-7B-alpha" or model == "zephyr-7B-beta":
+    elif model in ["zephyr-7B-alpha", "zephyr-7B-beta"]:
         llm_wrapper = zephyr.ZephyrMistralInnerMonologueWrapper()
-    elif model == "zephyr-7B-alpha-grammar" or model == "zephyr-7B-beta-grammar":
+    elif model in ["zephyr-7B-alpha-grammar", "zephyr-7B-beta-grammar"]:
         llm_wrapper = zephyr.ZephyrMistralInnerMonologueWrapper(include_opening_brace_in_prefix=False)
         # grammar_name = "json"
         grammar_name = "json_func_calls_with_inner_thoughts"
@@ -66,7 +70,7 @@ def get_chat_completion(
         # Warn the user that we're using the fallback
         if not has_shown_warning:
             print(
-                f"Warning: no wrapper specified for local LLM, using the default wrapper (you can remove this warning by specifying the wrapper with --model)"
+                "Warning: no wrapper specified for local LLM, using the default wrapper (you can remove this warning by specifying the wrapper with --model)"
             )
             has_shown_warning = True
         if HOST_TYPE in ["koboldcpp", "llamacpp", "webui"]:
@@ -78,7 +82,9 @@ def get_chat_completion(
             llm_wrapper = DEFAULT_WRAPPER()
 
     if grammar_name is not None and HOST_TYPE not in ["koboldcpp", "llamacpp", "webui"]:
-        print(f"Warning: grammars are currently only supported when using llama.cpp as the MemGPT local LLM backend")
+        print(
+            "Warning: grammars are currently only supported when using llama.cpp as the MemGPT local LLM backend"
+        )
 
     # First step: turn the message sequence into a prompt that the model expects
     try:
@@ -103,7 +109,7 @@ def get_chat_completion(
             result = get_ollama_completion(prompt, context_window)
         else:
             raise LocalLLMError(
-                f"BACKEND_TYPE is not set, please set variable depending on your backend (webui, lmstudio, llamacpp, koboldcpp)"
+                "BACKEND_TYPE is not set, please set variable depending on your backend (webui, lmstudio, llamacpp, koboldcpp)"
             )
     except requests.exceptions.ConnectionError as e:
         raise LocalLLMConnectionError(f"Unable to connect to host {HOST}")
@@ -120,8 +126,7 @@ def get_chat_completion(
     except Exception as e:
         raise LocalLLMError(f"Failed to parse JSON from local LLM response - error: {str(e)}")
 
-    # unpack with response.choices[0].message.content
-    response = DotDict(
+    return DotDict(
         {
             "model": None,
             "choices": [
@@ -142,4 +147,3 @@ def get_chat_completion(
             ),
         }
     )
-    return response

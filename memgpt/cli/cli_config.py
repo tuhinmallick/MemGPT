@@ -78,7 +78,7 @@ def configure():
     if use_azure:
         model_endpoint_options += ["azure"]
     assert (
-        len(model_endpoint_options) > 0
+        model_endpoint_options
     ), "No endpoints found. Please enable OpenAI, Azure, or set OPENAI_API_BASE to point at the IP address of your LLM server."
     valid_default_model = config.model_endpoint in model_endpoint_options
     default_endpoint = questionary.select(
@@ -94,7 +94,6 @@ def configure():
     if use_openai:
         embedding_endpoint_options += ["openai"]
     embedding_endpoint_options += ["local"]
-    valid_default_embedding = config.embedding_model in embedding_endpoint_options
     # determine the default selection in a smart way
     if "openai" in embedding_endpoint_options and default_endpoint == "openai":
         # openai llm -> openai embeddings
@@ -103,6 +102,7 @@ def configure():
         # local llm -> local embeddings
         default_embedding_endpoint_default = "local"
     else:
+        valid_default_embedding = config.embedding_model in embedding_endpoint_options
         default_embedding_endpoint_default = config.embedding_model if valid_default_embedding else embedding_endpoint_options[-1]
     default_embedding_endpoint = questionary.select(
         "Select default embedding endpoint:", embedding_endpoint_options, default=default_embedding_endpoint_default
@@ -118,10 +118,14 @@ def configure():
     default_preset = questionary.select("Select default preset:", preset_options, default=config.preset).ask()
 
     # default model
-    if use_openai or use_azure:
+    if use_openai:
         model_options = []
-        if use_openai:
-            model_options += ["gpt-4", "gpt-4-1106-preview", "gpt-3.5-turbo-16k"]
+        model_options += ["gpt-4", "gpt-4-1106-preview", "gpt-3.5-turbo-16k"]
+        default_model = questionary.select(
+            "Select default model (recommended: gpt-4):", choices=["gpt-4", "gpt-4-1106-preview", "gpt-3.5-turbo-16k"], default=config.model
+        ).ask()
+    elif use_azure:
+        model_options = []
         default_model = questionary.select(
             "Select default model (recommended: gpt-4):", choices=["gpt-4", "gpt-4-1106-preview", "gpt-3.5-turbo-16k"], default=config.model
         ).ask()
@@ -153,7 +157,7 @@ def configure():
                     default_model_context_window = int(default_model_context_window)
                     break
                 except ValueError:
-                    print(f"Context window must be a valid integer")
+                    print("Context window must be a valid integer")
         else:
             default_model_context_window = int(default_model_context_window)
     else:
@@ -289,19 +293,19 @@ def add(
 ):
     """Add a person/human"""
 
-    if option == "persona":
-        directory = os.path.join(MEMGPT_DIR, "personas")
-    elif option == "human":
+    if option == "human":
         directory = os.path.join(MEMGPT_DIR, "humans")
+    elif option == "persona":
+        directory = os.path.join(MEMGPT_DIR, "personas")
     else:
         raise ValueError(f"Unknown kind {kind}")
 
     if filename:
-        assert text is None, f"Cannot provide both filename and text"
+        assert text is None, "Cannot provide both filename and text"
         # copy file to directory
         shutil.copyfile(filename, os.path.join(directory, name))
     if text:
-        assert filename is None, f"Cannot provide both filename and text"
+        assert filename is None, "Cannot provide both filename and text"
         # write text to file
         with open(os.path.join(directory, name), "w") as f:
             f.write(text)

@@ -39,8 +39,7 @@ def use_preset(preset_name, agent_config, model, persona, human, interface, pers
             persistence_manager=persistence_manager,
             persona_notes=persona,
             human_notes=human,
-            # gpt-3.5-turbo tends to omit inner monologue, relax this requirement for now
-            first_message_verify_mono=True if "gpt-4" in model else False,
+            first_message_verify_mono="gpt-4" in model,
         )
 
     elif preset_name == "memgpt_extras":
@@ -75,8 +74,7 @@ def use_preset(preset_name, agent_config, model, persona, human, interface, pers
             persistence_manager=persistence_manager,
             persona_notes=persona,
             human_notes=human,
-            # gpt-3.5-turbo tends to omit inner monologue, relax this requirement for now
-            first_message_verify_mono=True if "gpt-4" in model else False,
+            first_message_verify_mono="gpt-4" in model,
         )
 
     else:
