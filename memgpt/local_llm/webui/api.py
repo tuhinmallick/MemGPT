@@ -31,17 +31,16 @@ def get_webui_completion(prompt, context_window, settings=SIMPLE, grammar=None):
     try:
         URI = urljoin(HOST.strip("/") + "/", WEBUI_API_SUFFIX.strip("/"))
         response = requests.post(URI, json=request)
-        if response.status_code == 200:
-            result = response.json()
-            result = result["results"][0]["text"]
-            if DEBUG:
-                print(f"json API response.text: {result}")
-        else:
+        if response.status_code != 200:
             raise Exception(
                 f"API call got non-200 response code (code={response.status_code}, msg={response.text}) for address: {URI}."
                 + f" Make sure that the web UI server is running and reachable at {URI}."
             )
 
+        result = response.json()
+        result = result["results"][0]["text"]
+        if DEBUG:
+            print(f"json API response.text: {result}")
     except:
         # TODO handle gracefully
         raise

@@ -9,6 +9,7 @@ Begin by doing:
   pip install -e . (inside the MemGPT home directory)
 """
 
+
 import os
 import autogen
 from memgpt.autogen.memgpt_agent import create_memgpt_autogen_agent_from_config
@@ -42,8 +43,7 @@ if not USE_MEMGPT:
     coder = autogen.AssistantAgent(
         name="Coder",
         llm_config=llm_config,
-        system_message=f"I am a 10x engineer, trained in Python. I was the first engineer at Uber "
-        f"(which I make sure to tell everyone I work with).",
+        system_message='I am a 10x engineer, trained in Python. I was the first engineer at Uber (which I make sure to tell everyone I work with).',
         human_input_mode="TERMINATE",
     )
 
@@ -53,8 +53,7 @@ else:
     coder = create_memgpt_autogen_agent_from_config(
         "MemGPT_coder",
         llm_config=llm_config,
-        system_message=f"I am a 10x engineer, trained in Python. I was the first engineer at Uber "
-        f"(which I make sure to tell everyone I work with).",
+        system_message='I am a 10x engineer, trained in Python. I was the first engineer at Uber (which I make sure to tell everyone I work with).',
         human_input_mode="TERMINATE",
     )
 

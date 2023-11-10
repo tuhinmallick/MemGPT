@@ -59,15 +59,8 @@ def repair_json_string(json_string):
     for char in json_string:
         if char == '"' and not escape:
             in_string = not in_string
-        if char == "\\" and not escape:
-            escape = True
-        else:
-            escape = False
-        if char == "\n" and in_string:
-            new_string += "\\n"
-        else:
-            new_string += char
-
+        escape = char == "\\" and not escape
+        new_string += "\\n" if char == "\n" and in_string else char
     return new_string
 
 
@@ -101,9 +94,14 @@ def repair_even_worse_json(json_string):
                 escape = False
             if in_message:
                 if char == "}":
-                    # Append the consolidated message and the closing characters then reset the flag
-                    new_json_parts.append('"{}"'.format("".join(message_content).replace("\n", " ")))
-                    new_json_parts.append(char)
+                    new_json_parts.extend(
+                        (
+                            '"{}"'.format(
+                                "".join(message_content).replace("\n", " ")
+                            ),
+                            char,
+                        )
+                    )
                     in_message = False
                 elif in_string or char.isalnum() or char.isspace() or char in ".',;:!":
                     # Collect the message content, excluding structural characters
@@ -116,9 +114,7 @@ def repair_even_worse_json(json_string):
                     in_message = True
                     message_content = []
 
-    # Joining everything to form the new JSON
-    repaired_json = "".join(new_json_parts)
-    return repaired_json
+    return "".join(new_json_parts)
 
 
 def clean_json(raw_llm_output, messages=None, functions=None):

@@ -54,8 +54,25 @@ def create_memgpt_autogen_agent_from_config(
         interface_kwargs=interface_kwargs,
     )
 
-    if human_input_mode != "ALWAYS":
-        coop_agent1 = create_autogen_memgpt_agent(
+    if human_input_mode == "ALWAYS":
+        return autogen_memgpt_agent
+    coop_agent1 = create_autogen_memgpt_agent(
+        name,
+        preset=presets.DEFAULT_PRESET,
+        model=model,
+        persona_description=persona_desc,
+        user_description=user_desc,
+        is_termination_msg=is_termination_msg,
+        interface_kwargs=interface_kwargs,
+    )
+    coop_agent2 = (
+        UserProxyAgent(
+            name,
+            human_input_mode="NEVER",
+            default_auto_reply=default_auto_reply,
+        )
+        if default_auto_reply != ""
+        else create_autogen_memgpt_agent(
             name,
             preset=presets.DEFAULT_PRESET,
             model=model,
@@ -64,33 +81,13 @@ def create_memgpt_autogen_agent_from_config(
             is_termination_msg=is_termination_msg,
             interface_kwargs=interface_kwargs,
         )
-        if default_auto_reply != "":
-            coop_agent2 = UserProxyAgent(
-                name,
-                human_input_mode="NEVER",
-                default_auto_reply=default_auto_reply,
-            )
-        else:
-            coop_agent2 = create_autogen_memgpt_agent(
-                name,
-                preset=presets.DEFAULT_PRESET,
-                model=model,
-                persona_description=persona_desc,
-                user_description=user_desc,
-                is_termination_msg=is_termination_msg,
-                interface_kwargs=interface_kwargs,
-            )
-
-        groupchat = GroupChat(
-            agents=[autogen_memgpt_agent, coop_agent1, coop_agent2],
-            messages=[],
-            max_round=12 if max_consecutive_auto_reply is None else max_consecutive_auto_reply,
-        )
-        manager = GroupChatManager(name=name, groupchat=groupchat, llm_config=llm_config)
-        return manager
-
-    else:
-        return autogen_memgpt_agent
+    )
+    groupchat = GroupChat(
+        agents=[autogen_memgpt_agent, coop_agent1, coop_agent2],
+        messages=[],
+        max_round=12 if max_consecutive_auto_reply is None else max_consecutive_auto_reply,
+    )
+    return GroupChatManager(name=name, groupchat=groupchat, llm_config=llm_config)
 
 
 def create_autogen_memgpt_agent(
@@ -146,12 +143,11 @@ def create_autogen_memgpt_agent(
         persistence_manager,
     )
 
-    autogen_memgpt_agent = MemGPTAgent(
+    return MemGPTAgent(
         name=autogen_name,
         agent=memgpt_agent,
         is_termination_msg=is_termination_msg,
     )
-    return autogen_memgpt_agent
 
 
 class MemGPTAgent(ConversableAgent):
@@ -183,11 +179,7 @@ class MemGPTAgent(ConversableAgent):
         self.agent.persistence_manager.archival_memory.storage = StorageConnector.get_storage_connector(agent_config=self.agent.config)
 
     def format_other_agent_message(self, msg):
-        if "name" in msg:
-            user_message = f"{msg['name']}: {msg['content']}"
-        else:
-            user_message = msg["content"]
-        return user_message
+        return f"{msg['name']}: {msg['content']}" if "name" in msg else msg["content"]
 
     def find_last_user_message(self):
         last_user_message = None
@@ -258,9 +250,5 @@ class MemGPTAgent(ConversableAgent):
 
         To accommodate AutoGen, concatenate all of MemGPT's steps into one and return as a single message.
         """
-        ret = {"role": "assistant", "content": ""}
-        lines = []
-        for m in messages:
-            lines.append(f"{m}")
-        ret["content"] = "\n".join(lines)
-        return ret
+        lines = [f"{m}" for m in messages]
+        return {"role": "assistant", "content": "\n".join(lines)}

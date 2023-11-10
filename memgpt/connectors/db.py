@@ -43,8 +43,14 @@ def get_db_model(table_name: str):
 
     """Create database model for table_name"""
     class_name = f"{table_name.capitalize()}Model"
-    Model = type(class_name, (PassageModel,), {"__tablename__": table_name, "__table_args__": {"extend_existing": True}})
-    return Model
+    return type(
+        class_name,
+        (PassageModel,),
+        {
+            "__tablename__": table_name,
+            "__table_args__": {"extend_existing": True},
+        },
+    )
 
 
 class PostgresStorageConnector(StorageConnector):
@@ -130,12 +136,15 @@ class PostgresStorageConnector(StorageConnector):
         # Assuming PassageModel.embedding has the capability of computing l2_distance
         results = session.scalars(select(self.db_model).order_by(self.db_model.embedding.l2_distance(query_vec)).limit(top_k)).all()
 
-        # Convert the results into Passage objects
-        passages = [
-            Passage(text=result.text, embedding=np.frombuffer(result.embedding), doc_id=result.doc_id, passage_id=result.id)
+        return [
+            Passage(
+                text=result.text,
+                embedding=np.frombuffer(result.embedding),
+                doc_id=result.doc_id,
+                passage_id=result.id,
+            )
             for result in results
         ]
-        return passages
 
     def delete(self):
         """Drop the passage table from the database."""

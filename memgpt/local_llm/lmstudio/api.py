@@ -48,17 +48,15 @@ def get_lmstudio_completion(prompt, context_window, settings=SIMPLE, api="chat")
                 result = result["choices"][0]["text"]
             if DEBUG:
                 print(f"json API response.text: {result}")
+        elif "context length" in response.text.lower():
+            # "exceeds context length" is what appears in the LM Studio error message
+            # raise an alternate exception that matches OpenAI's message, which is "maximum context length"
+            raise Exception(f"Request exceeds maximum context length (code={response.status_code}, msg={response.text}, URI={URI})")
         else:
-            # Example error: msg={"error":"Context length exceeded. Tokens in context: 8000, Context length: 8000"}
-            if "context length" in str(response.text).lower():
-                # "exceeds context length" is what appears in the LM Studio error message
-                # raise an alternate exception that matches OpenAI's message, which is "maximum context length"
-                raise Exception(f"Request exceeds maximum context length (code={response.status_code}, msg={response.text}, URI={URI})")
-            else:
-                raise Exception(
-                    f"API call got non-200 response code (code={response.status_code}, msg={response.text}) for address: {URI}."
-                    + f" Make sure that the LM Studio local inference server is running and reachable at {URI}."
-                )
+            raise Exception(
+                f"API call got non-200 response code (code={response.status_code}, msg={response.text}) for address: {URI}."
+                + f" Make sure that the LM Studio local inference server is running and reachable at {URI}."
+            )
     except:
         # TODO handle gracefully
         raise

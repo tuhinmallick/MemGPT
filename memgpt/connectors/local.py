@@ -51,10 +51,7 @@ class LocalStorageConnector(StorageConnector):
             self.nodes = []
 
         # create vectorindex
-        if len(self.nodes):
-            self.index = VectorStoreIndex(self.nodes)
-        else:
-            self.index = EmptyIndex()
+        self.index = VectorStoreIndex(self.nodes) if len(self.nodes) else EmptyIndex()
 
     def get_nodes(self) -> List[TextNode]:
         """Get llama index nodes"""
@@ -81,7 +78,7 @@ class LocalStorageConnector(StorageConnector):
     def get_all(self, limit: int) -> List[Passage]:
         passages = []
         for node in self.get_nodes():
-            assert node.embedding is not None, f"Node embedding is None"
+            assert node.embedding is not None, "Node embedding is None"
             passages.append(Passage(text=node.text, embedding=node.embedding))
             if len(passages) >= limit:
                 break
@@ -120,8 +117,7 @@ class LocalStorageConnector(StorageConnector):
             similarity_top_k=top_k,
         )
         nodes = retriever.retrieve(query)
-        results = [Passage(embedding=node.embedding, text=node.text) for node in nodes]
-        return results
+        return [Passage(embedding=node.embedding, text=node.text) for node in nodes]
 
     def save(self):
         # assert len(self.nodes) == len(self.get_nodes()), f"Expected {len(self.nodes)} nodes, got {len(self.get_nodes())} nodes"

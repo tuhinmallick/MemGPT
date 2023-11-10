@@ -142,7 +142,7 @@ class SimpleSummaryWrapper(LLMChatCompletionWrapper):
         }
         """
         raw_llm_output = raw_llm_output.strip()
-        message = {
+        return {
             "role": "assistant",
             "content": raw_llm_output,
             # "function_call": {
@@ -150,4 +150,3 @@ class SimpleSummaryWrapper(LLMChatCompletionWrapper):
             # "arguments": json.dumps(function_parameters),
             # },
         }
-        return message

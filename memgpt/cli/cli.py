@@ -63,17 +63,16 @@ def run(
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    if not MemGPTConfig.exists():  # if no config, run configure
-        if yes:
-            # use defaults
-            config = MemGPTConfig()
-        else:
-            # use input
-            configure()
-            config = MemGPTConfig.load()
-    else:  # load config
+    if MemGPTConfig.exists():  # load config
         config = MemGPTConfig.load()
 
+    elif yes:
+        # use defaults
+        config = MemGPTConfig()
+    else:
+        # use input
+        configure()
+        config = MemGPTConfig.load()
     # override with command line arguments
     if debug:
         config.debug = debug
@@ -85,9 +84,10 @@ def run(
         agent_files = utils.list_agent_config_files()
         agents = [AgentConfig.load(f).name for f in agent_files]
 
-        if len(agents) > 0 and not any([persona, human, model]):
-            select_agent = questionary.confirm("Would you like to select an existing agent?").ask()
-            if select_agent:
+        if agents and not any([persona, human, model]):
+            if select_agent := questionary.confirm(
+                "Would you like to select an existing agent?"
+            ).ask():
                 agent = questionary.select("Select agent:", choices=agents).ask()
 
     # configure llama index
@@ -100,7 +100,7 @@ def run(
     sys.stdout = original_stdout
 
     # overwrite the context_window if specified
-    if context_window is not None and int(context_window) != config.context_window:
+    if context_window is not None and context_window != config.context_window:
         typer.secho(f"Warning: Overriding existing context window {config.context_window} with {context_window}", fg=typer.colors.YELLOW)
         config.context_window = context_window
 
@@ -191,7 +191,7 @@ def attach(
     typer.secho(f"Ingesting {size} passages into {agent_config.name}", fg=typer.colors.GREEN)
     page_size = 100
     generator = source_storage.get_all_paginated(page_size=page_size)  # yields List[Passage]
-    for i in tqdm(range(0, size, page_size)):
+    for _ in tqdm(range(0, size, page_size)):
         passages = next(generator)
         dest_storage.insert_many(passages, show_progress=False)
 

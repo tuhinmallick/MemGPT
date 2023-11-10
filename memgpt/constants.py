@@ -39,7 +39,7 @@ LLM_MAX_TOKENS = {
 # The amount of tokens before a sytem warning about upcoming truncation is sent to MemGPT
 MESSAGE_SUMMARY_WARNING_FRAC = 0.75
 # The error message that MemGPT will receive
-MESSAGE_SUMMARY_WARNING_STR = f"Warning: the conversation history will soon reach its maximum length and be trimmed. Make sure to save any important information from the conversation to your memory before it is removed."
+MESSAGE_SUMMARY_WARNING_STR = "Warning: the conversation history will soon reach its maximum length and be trimmed. Make sure to save any important information from the conversation to your memory before it is removed."
 # The fraction of tokens we truncate down to
 MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC = 0.75
 
